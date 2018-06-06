@@ -1,0 +1,458 @@
+import random
+import sys
+import os
+import math
+
+
+def population_generate(population_size, chromosome_length):
+    population = []
+    list1 = []
+    for j in range(0, chromosome_length):
+        list1.insert(j, random.randrange(0, 2))
+
+    population.insert(0, list1)
+
+    list1 = []
+    for j in range(0, chromosome_length):
+        list1.insert(j, random.randrange(0, 2))
+
+    for i in range(1, population_size):
+        while list1 in population[0:len(population)]:
+            list1 = []
+            for j in range(0, chromosome_length):
+                list1.insert(j, random.randrange(0, 2))
+        population.insert(i, list1)
+        list1 = []
+        for j in range(0, chromosome_length):
+            list1.insert(j, random.randrange(0, 2))
+    list1 = []
+
+    return population
+
+
+def test_candidate_array(population_size, number_of_gate):
+    test_candidate = [[0] * number_of_gate for i in range(population_size)]
+
+    for i in range(0, population_size):
+        for j in range(0, number_of_gate):
+            test_candidate[i][j] = 0
+    return test_candidate
+
+
+def circuit_define(wire_number, gate_number):
+    col = 2 * gate_number + 1
+    circuit = [[0] * col for i in range(wire_number)]
+
+    for i in range(0, col):
+        if i % 2 != 0:
+            print("Gate No: %d" % ((i / 2) + 1))
+            for j in range(0, wire_number):
+                circuit[j][i] = int(sys.stdin.readline())
+        else:
+            for j in range(0, wire_number):
+                circuit[j][i] = 4
+
+    return circuit
+
+
+def rev_simulator(circuit, population, gate_detection, wire, gate):
+    col = 2 * gate + 1
+    temp = []
+    fitness = []
+    d = 0
+
+    for m in range(0, len(population)):
+        for i in range(0, wire):
+            circuit[i][0] = population[m][i]
+
+        for i in range(0, wire+1):
+            temp.insert(i, 5)
+
+        for i in range(0, col):
+            if i % 2 != 0:
+                for j in range(0, wire):
+                    if circuit[j][i] == 0:
+                        if circuit[j][i-1] == 0:
+                            temp.insert(j, 1)
+                        elif circuit[j][i-1] == 1:
+                            temp.insert(j, 0)
+                    elif circuit[j][i] == 1:
+                        if circuit[j][i-1] == 0:
+                            temp.insert(j, 0)
+                        elif circuit[j][i-1] == 1:
+                            temp.insert(j, 1)
+                    elif circuit[j][i] == 2:
+                        temp.insert(j, circuit[j][i-1])
+
+                c = 0
+                for j in range(0, wire):
+                    if circuit[j][i] == 2:
+                        for k in range(0, wire):
+                            if k != j and circuit[k][i] == 3:
+                                c = c+1
+
+                            if c != wire-1:
+                                if k != j and circuit[k][i] != 3:
+                                    temp.insert(wire, temp[k])
+                                    for p in range(0, wire):
+                                        if p != j and p != k and circuit[p][i] != 3:
+                                            temp.insert(wire, temp[wire] & temp[p])
+                                    break
+                            else:
+                                break
+
+                        if c != wire-1:
+                            temp[j] = temp[j] ^ temp[wire]
+                            circuit[j][i+1] = temp[j]
+                        else:
+                            if circuit[j][i-1] == 0:
+                                circuit[j][i+1] = 1
+                            else:
+                                circuit[j][i+1] = 0
+
+                for j in range(0, wire):
+                    if circuit[j][i] == 0:
+                        if circuit[j][i-1] == 0:
+                            circuit[j][i+1] = 0
+                        elif circuit[j][i-1] == 1:
+                            circuit[j][i+1] = 1
+                    elif circuit[j][i] == 1:
+                        if circuit[j][i-1] == 1:
+                            circuit[j][i+1] = 1
+                        elif circuit[j][i-1] == 0:
+                            circuit[j][i+1] = 0
+                    elif circuit[j][i] == 3:
+                        circuit[j][i+1] = circuit[j][i-1]
+
+        for i in range(0, col):
+            if i % 2 != 0:
+                change = False
+                for j in range(0, wire):
+                    if circuit[j][i] != 2 and circuit[j][i] != circuit[j][i-1] and circuit[j][i] != 3:
+                        change = True
+                        break
+                if change is False:
+                    gate_detection[m][i//2] = 1
+                    d = d + 1
+
+        fitness.insert(m, d)
+
+        d = 0
+
+    return fitness
+
+
+def binary_tournament_selection(array_name, length_pop):
+    fit_one = random.randrange(0, length_pop)
+
+    for i in [0]:
+        fit_two = random.randrange(0, length_pop)
+        if fit_one != fit_two:
+            break
+
+    if array_name[fit_one] > array_name[fit_two]:
+        return fit_one
+    else:
+        return fit_two
+
+
+def crossover(array_name, length):
+    offspring = [[0] * length for i in range(len(array_name))]
+
+    position = random.randrange(0, length)
+    for i in range(0, length):
+        if i <= position:
+            offspring[0][i] = array_name[0][i]
+            offspring[1][i] = array_name[1][i]
+        else:
+            offspring[0][i] = array_name[1][i]
+            offspring[1][i] = array_name[0][i]
+
+    return offspring
+
+
+def mutation(array_name, length):
+    position = random.randrange(0, length)
+
+    for i in range(0, 2):
+        for j in range(0, length):
+            if j == position:
+                if array_name[i][j] == 0:
+                    array_name[i][j] = 1
+                else:
+                    array_name[i][j] = 0
+
+    return array_name
+
+
+def sort_population(array_name, fit_array, pop_size):
+    sort_array = []
+
+    j = 0
+    while j < pop_size:
+        for i in range(0, len(array_name)):
+            if array_name[i][2] == max(fit_array):
+                sort_array.append(array_name[i])
+                del array_name[i]
+                del fit_array[i]
+                break
+        j = j + 1
+
+    array_name = sort_array
+
+    return array_name
+
+
+def find_vector_analysis():
+    print('Enter the number of wires: ')
+    wires = int(sys.stdin.readline())
+    print('Enter the number of gates: ')
+    gates = int(sys.stdin.readline())
+
+    length_chromosome = wires
+    size_population = int(math.ceil(0.2 * (2 ** wires)))
+
+    def_circuit = circuit_define(wires, gates)
+    populations = population_generate(size_population, length_chromosome)
+    defined_test_candidate = test_candidate_array(size_population, gates)
+    fitness_population = rev_simulator(def_circuit, populations, defined_test_candidate, wires, gates)
+    vector = [[] * 3 for i in range(0, size_population)]
+    for i in range(size_population):
+        vector[i] = [populations[i], defined_test_candidate[i], fitness_population[i]]
+
+    vector_analysis = []
+    check_gate = []
+    for i in range(0, gates):
+        check_gate.insert(i, 0)
+
+    check = check_gate[0]
+    while check == 0:
+
+        '''
+        sum_check = sum(check_gate)
+        if sum_check >= (gates - math.floor(0.2 * gates)):
+            break
+        '''
+
+        ######################
+        #####Generation#######
+        ######################
+        parent_1 = binary_tournament_selection(fitness_population, len(fitness_population))
+
+        anything = 0
+        while anything == 0:
+            parent_2 = binary_tournament_selection(fitness_population, len(fitness_population))
+            if parent_1 != parent_2:
+                break
+
+        parent = [[] * length_chromosome for i in range(0, 2)]
+
+        parent[0] = populations[parent_1]
+        parent[1] = populations[parent_2]
+
+        crossover_mutation_flag = 1
+        while crossover_mutation_flag == 1:
+            #######Crossover#######
+            crossover_probability = random.randrange(0, 100)
+            if crossover_probability <= 90:
+                child_after_crossover = crossover(parent, length_chromosome)
+                crossover_not_occurred_flag = 0
+            else:
+                crossover_not_occurred_flag = 1
+            ######Mutation#########
+            mutation_probability = random.randrange(0, 100)
+            if crossover_not_occurred_flag == 0:
+                if mutation_probability < 2:
+                    child_after_mutation = mutation(child_after_crossover, length_chromosome)
+                    mutation_not_occurred_flag = 0
+                else:
+                    mutation_not_occurred_flag = 1
+            else:
+                if mutation_probability < 2:
+                    child_after_mutation = mutation(parent, length_chromosome)
+                    mutation_not_occurred_flag = 0
+                else:
+                    mutation_not_occurred_flag = 1
+            #####Simulation on child########
+            if mutation_not_occurred_flag == 0:
+                offspring_test_candidate = test_candidate_array(2, gates)
+                fitness_offspring = rev_simulator(def_circuit, child_after_mutation, offspring_test_candidate, wires, gates)
+
+                result = [[] * 3 for i in range(0, 2)]
+                for i in range(0, 2):
+                    result[i] = [child_after_mutation[i], offspring_test_candidate[i], fitness_offspring[i]]
+                    crossover_mutation_flag = 0
+            elif crossover_not_occurred_flag == 0:
+                offspring_test_candidate = test_candidate_array(2, gates)
+                fitness_offspring = rev_simulator(def_circuit, child_after_crossover, offspring_test_candidate, wires,
+                                                  gates)
+
+                result = [[] * 3 for i in range(0, 2)]
+                for i in range(0, 2):
+                    result[i] = [child_after_crossover[i], offspring_test_candidate[i], fitness_offspring[i]]
+                    crossover_mutation_flag = 0
+            else:
+                crossover_mutation_flag = 1
+
+        '''
+        print("After Crossover and mutation: ", end=" ")
+        print(result)
+        print("Before Replacement")
+        print(vector)
+        print(fitness_population)
+        '''
+
+        for i in range(0, 2):
+            if result[i] not in vector[0:len(vector)]:
+                if result[i][2] > min(fitness_population):
+                    for m in range(0, len(vector)):
+                        if vector[m][2] == min(fitness_population):
+                            vector[m] = result[i]
+                            fitness_population[m] = result[i][2]
+                            break
+
+        '''
+        print("After Replacement")
+        print(vector)
+        print(fitness_population)
+        print(max(fitness_population))
+        '''
+
+        sorted_population = sort_population(vector, fitness_population, len(vector))
+        vector = sorted_population
+        fitness_population = []
+        for i in range(0, len(vector)):
+            fitness_population.append(vector[i][2])
+
+        if len(vector_analysis) == 0:
+            vector_analysis.append(vector[0])
+            for m in range(0, gates):
+                check_gate[m] = check_gate[m] | vector[0][1][m]
+        elif len(vector_analysis) != 0:
+            for i in range(0, len(vector)):
+                if vector[i] not in vector_analysis[0: len(vector_analysis)]:
+                    vector_analysis.append(vector[i])
+                    for m in range(0, gates):
+                        check_gate[m] = check_gate[m] | vector[i][1][m]
+                    break
+
+        '''
+        print("check gate: ", end=" ")
+        print(check_gate)
+        print("vector analysis:")
+        print(vector_analysis)
+
+        print("After replacement")
+        print(vector)
+        print(fitness_population)
+        '''
+
+        #####################
+        #####################
+        check = check_gate[0]
+        for i in range(0, gates):
+            check = check & check_gate[i]
+
+    return vector_analysis
+
+
+def maximum_index(a):
+    maximum = 0
+    for i in range(0, len(a)):
+        if a[i][2] > maximum:
+            maximum = a[i][2]
+            address = i
+
+    return address
+
+
+def max_fittest_vector(array_name, number_of_gates):
+    max_fit = maximum_index(array_name)
+
+    list1 = []
+    for j in range(0, 2):
+        if j == 0:
+            list1.insert(j, array_name[max_fit][j])
+        elif j == 1:
+            for k in range(0, number_of_gates):
+                if array_name[max_fit][j][k] == 1:
+                    list1.append(k+1)
+
+    return list1
+
+
+def maximum_covered_index(a):
+    maximum = 0
+    for i in range(0, len(a)):
+        if a[i][2] > maximum:
+            maximum = a[i][2]
+            address = i
+    return address
+
+
+def covered_array_maker(array_name, undetected_array_list):
+    intermediate_list = []
+    covered_list = []
+    resulted_array = []
+
+    for i in range(0, len(array_name)):
+        if array_name[i][2] > 0:
+            covered_list.append(array_name[i][0])
+            for j in range(0, len(undetected_array_list)):
+                if undetected_array_list[j] != -1:
+                    intermediate_list.append(array_name[i][1][undetected_array_list[j]])
+            covered_list.append(intermediate_list)
+            covered_list.append(sum(intermediate_list))
+            resulted_array.append(covered_list)
+            covered_list = []
+            intermediate_list = []
+
+    return resulted_array
+
+
+def cover_most_algorithm(array_name, number_of_gates):
+    resulted_array = []
+    undetected_gates = []
+    check_gates = []
+    for i in range(0, number_of_gates):
+        undetected_gates.insert(i, i)
+        check_gates.insert(i, 0)
+
+    while sum(check_gates) != number_of_gates:
+        covered_array = covered_array_maker(array_name, undetected_gates)
+        max_covered_address = maximum_covered_index(covered_array)
+        resulted_array.append(array_name[max_covered_address])
+        for i in range(0, number_of_gates):
+            if array_name[max_covered_address][1][i] == 1:
+                undetected_gates[i] = -1
+                check_gates[i] = 1
+        del array_name[max_covered_address]
+
+    return resulted_array
+
+
+final_result = find_vector_analysis()
+
+final_unique_result = []
+
+final_unique_result.insert(0, final_result[0])
+
+for k in range(0, len(final_result)):
+    if final_result[k] not in final_unique_result:
+        final_unique_result.append(final_result[k])
+
+#print("\n\nFinal with duplicates: ")
+#print(final_result)
+
+print("\n\nFinal without duplicates: ")
+for v in range(0, len(final_unique_result)):
+    print(final_unique_result[v])
+
+print("\n\nFinal Result :")
+
+result = cover_most_algorithm(final_unique_result, len(final_unique_result[0][1]))
+
+for v in range(0, len(result)):
+    print(result[v])
+
+

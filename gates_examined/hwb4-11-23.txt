@@ -1,0 +1,81 @@
+"C:\Users\Shaiful Islam Shabuj\AppData\Local\Programs\Python\Python36\python.exe" "D:/EWU/Fall2017/cse497 Thesis/revPython/main.py"
+Enter the number of wires:
+4
+Enter the number of gates:
+11
+Gate No: 1
+3
+2
+3
+1
+Gate No: 2
+3
+1
+2
+3
+Gate No: 3
+2
+3
+1
+3
+Gate No: 4
+3
+1
+2
+1
+Gate No: 5
+1
+2
+3
+3
+Gate No: 6
+1
+3
+1
+2
+Gate No: 7
+2
+1
+3
+3
+Gate No: 8
+3
+1
+2
+1
+Gate No: 9
+1
+3
+3
+2
+Gate No: 10
+3
+2
+3
+1
+Gate No: 11
+2
+3
+1
+3
+
+
+Population Size (20% of vectors):  4
+Vector Analysis Time:  0.0 ms
+Number of Generation:  8
+Final without duplicates:
+[[1, 0, 0, 1], [1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 1], 8]
+[[1, 1, 0, 0], [0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1], 6]
+[[1, 1, 1, 0], [0, 1, 0, 0, 1, 0, 0, 0, 1, 1, 0], 4]
+[[1, 0, 1, 0], [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1], 2]
+[[1, 1, 1, 1], [1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1], 4]
+[[1, 0, 1, 1], [1, 1, 0, 1, 1, 1, 0, 0, 1, 1, 1], 8]
+
+
+Final Result :
+Time to find most covered Vectors:  0.0 ms
+Number of Covered Vectors:  2
+[[1, 0, 0, 1], [1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 1], 8]
+[[1, 0, 1, 1], [1, 1, 0, 1, 1, 1, 0, 0, 1, 1, 1], 8]
+
+Process finished with exit code 0
